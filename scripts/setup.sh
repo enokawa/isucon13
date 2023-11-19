@@ -2,7 +2,7 @@
 
 set -eu
 
-readonly ALP_VERSION="v1.0.15"
+readonly ALP_VERSION="v1.0.21"
 
 echo "###################################################"
 

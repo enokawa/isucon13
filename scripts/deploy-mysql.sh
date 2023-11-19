@@ -28,6 +28,7 @@ do
   # ssh ${server} sudo rm -f /var/log/mysql/mysql-slow.log
   
   # Restart MySQL service
+  ssh ${server} sudo rm -f /var/log/mysql/mysql-slow.log
   ssh ${server} sudo mysqladmin flush-logs
   ssh ${server} sudo systemctl restart mysql.service
   echo "============= ${server} ============="

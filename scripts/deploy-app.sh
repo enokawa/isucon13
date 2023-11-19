@@ -7,7 +7,6 @@ cd `dirname $0`
 read servers < servers.txt
 
 files=(
-  env.sh
   webapp/python/main.py
   webapp/sql/0_Schema.sql
 )
@@ -16,11 +15,12 @@ for server in ${servers[@]}
 do
   echo "============= ${server} ============="
   # Stop Go service and enable Python service
-  ssh ${server} sudo systemctl stop isucondition.go.service
-  ssh ${server} sudo systemctl disable isucondition.go.service
-  ssh ${server} sudo systemctl enable isucondition.python.service
+  # ssh ${server} sudo systemctl stop isucondition.go.service
+  # ssh ${server} sudo systemctl disable isucondition.go.service
+  # ssh ${server} sudo systemctl enable isucondition.python.service
 
   # Stop Python service
+  # TODO: Fix Systemd Unit name
   ssh ${server} sudo systemctl stop isucondition.python.service
 
   for file in ${files[@]}
@@ -34,6 +34,7 @@ do
   
   # Restart services
   ssh ${server} sudo systemctl start isucondition.python.service
+  ssh ${server} sudo rm -f /var/log/mysql/mysql-slow.log
   ssh ${server} sudo mysqladmin flush-logs
   ssh ${server} sudo nginx -s reopen
   echo "============= ${server} ============="

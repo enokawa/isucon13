@@ -11,5 +11,5 @@ files=(
 
 for file in ${files[@]}
 do
-  scp isuconXX-qualify-1:/${file} ../${file}
+  scp isucon13-1:/${file} ../${file}
 done
