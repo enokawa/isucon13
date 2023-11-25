@@ -18,6 +18,14 @@ alp json \
 < /var/log/nginx/access.log
 ```
 
+```sh
+alp json \
+--sort sum -r \
+-m "/api/user/\w+/icon,/api/user/\w+,/api/livestream/[0-9]+/statistics,/api/livestream/[0-9]+/livecomment,/api/livestream/[0-9]+/reaction,/api/livestream/[0-9]+/moderate,/api/livestream/[0-9]+/report,/api/livestream/[0-9]+/moderate,/api/livestream/[0-9]+/enter,/api/livestream/[0-9]+/ngwords,/api/livestream/[0-9]+/exit" \
+-o count,method,uri,min,avg,max,sum \
+< /var/log/nginx/access.log
+```
+
 - `-m "/posts/[0-9]+,/@\w+,/image/\d+"`
   - `/posts/` , `/@username` , `/image/` は不特定多数の URI へのリクエストがあるため纏める
 
@@ -110,3 +118,5 @@ ALTER TABLE `isu_condition` ADD INDEX `jia_isu_uuid_idx` (jia_isu_uuid, timestam
 
 ALTER TABLE `isu_condition` DROP INDEX `jia_isu_uuid_idx`;
 ```
+
+ALTER TABLE `users` ADD INDEX `jia_isu_uuid_idx` (jia_isu_uuid);

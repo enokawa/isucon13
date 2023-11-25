@@ -9,6 +9,7 @@ read servers < servers.txt
 files=(
   webapp/python/app.py
   webapp/python/models.py
+  webapp/sql/initdb.d/10_schema.sql
 )
 
 for server in ${servers[@]}
