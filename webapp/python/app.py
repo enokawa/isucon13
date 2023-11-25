@@ -16,6 +16,7 @@ from http.client import (
     FORBIDDEN,
     INTERNAL_SERVER_ERROR,
     NOT_FOUND,
+    NOT_MODIFIED,
     OK,
     UNAUTHORIZED,
 )
@@ -28,6 +29,7 @@ from flask import Flask, Response, request, send_file, session
 from mysql.connector.errors import DatabaseError
 from sqlalchemy import create_engine
 
+import shutil
 
 class Settings(object):
     LISTEN_PORT = 8080
@@ -1273,6 +1275,8 @@ def get_user_statistics_handler(username: str) -> tuple[dict[str, Any], int]:
 
 @app.route("/api/user/<string:username>/icon", methods=["GET"])
 def get_icon_handler(username: str) -> Response:
+    req_icon_hash = request.headers.get("If-None-Match", None)
+
     conn = engine.raw_connection()
 
     try:
@@ -1290,7 +1294,7 @@ def get_icon_handler(username: str) -> Response:
         sql = "SELECT image FROM icons WHERE user_id = %s"
         c.execute(sql, [user.id])
 
-        image = c.fetchone()
+        image_row = c.fetchone()
     except DatabaseError as err:
         conn.rollback()
         raise err
@@ -1298,16 +1302,26 @@ def get_icon_handler(username: str) -> Response:
         conn.commit()
         conn.close()
 
-    if not image:
+    if not image_row:
         return send_file(
             Settings.FALLBACK_IMAGE, mimetype="image/jpeg", as_attachment=True
         )
+
+    if req_icon_hash is not None:
+        image = io.BytesIO(image_row["image"]).getvalue()
+
+        icon_hash = hashlib.sha256(image).hexdigest()
+        if req_icon_hash == icon_hash:
+            return NOT_MODIFIED
+
     return send_file(
-        io.BytesIO(image["image"]),
+        io.BytesIO(image_row["image"]),
         mimetype="image/jpeg",
         as_attachment=True,
         download_name="icon.jpg",
     )
+
+
 
 
 @app.route("/api/icon", methods=["POST"])
@@ -1325,6 +1339,44 @@ def post_icon_handler() -> tuple[dict[str, Any], int]:
             BAD_REQUEST,
         )
     new_icon = b64decode(req["image"])
+
+    # conn = engine.raw_connection()
+
+    # # get user namd
+    # try:
+    #     conn.start_transaction()
+    #     c = conn.cursor(dictionary=True)
+
+    #     sql = "SELECT name FROM users WHERE id = %s"
+    #     c.execute(sql, [user_id])
+
+    #     row = c.fetchone()
+    #     if row is None:
+    #         raise HttpException("user not found", INTERNAL_SERVER_ERROR)
+    #     user_name = row["name"]
+
+    #     # save image
+    #     image_file_path = "/home/isucon/webapp/public/icon/{}.jpg".format(user_name)
+
+    #     with open(image_file_path, mode='wb') as f:
+    #         f.write(new_icon)
+
+    #     c = conn.cursor(dictionary=True)
+
+    #     sql = "DELETE FROM icon_ids WHERE user_id = %s"
+    #     c.execute(sql, [user_id])
+
+    #     sql = "INSERT INTO icon_ids (user_id) VALUES (%s)"
+    #     c.execute(sql, [user_id])
+
+    #     icon_id = c.lastrowid
+    #     return {"id": icon_id}, CREATED
+    # except DatabaseError as err:
+    #     conn.rollback()
+    #     raise err
+    # finally:
+    #     conn.commit()
+    #     conn.close()
 
     conn = engine.raw_connection()
 
