@@ -6,7 +6,6 @@ cd `dirname $0`
 
 files=(
   etc/mysql/mysql.conf.d/mysqld.cnf
-  # etc/mysql/mariadb.conf.d/50-server.cnf
 )
 
 for file in ${files[@]}
