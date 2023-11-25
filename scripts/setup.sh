@@ -8,11 +8,11 @@ echo "###################################################"
 
 # Ignore login message such as below:
 # `Welcome to Ubuntu 20.04.4 LTS ...`
-if test -f /home/ubuntu/.hushlogin; then
-  echo "[skip] /home/ubuntu/.hushlogin has exists."
+if test -f /home/isucon/.hushlogin; then
+  echo "[skip] /home/isucon/.hushlogin has exists."
 else
-  echo "/home/ubuntu/.hushlogin has not exists. Will create that file."
-  touch /home/ubuntu/.hushlogin
+  echo "/home/isucon/.hushlogin has not exists. Will create that file."
+  touch /home/isucon/.hushlogin
 fi
 
 echo "###################################################"

@@ -9,9 +9,12 @@ read servers < servers.txt
 # on /home/isucon/
 files=(
   env.sh
-  webapp/python/main.py
+  webapp/python/
   webapp/sql/init.sh
-  webapp/sql/01_Schema.sql
+  webapp/sql/init.sql
+  webapp/sql/initdb.d/00_create_database.sql
+  webapp/sql/initdb.d/10_schema.sql
+  webapp/pdns
 )
 
 for file in ${files[@]}
