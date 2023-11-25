@@ -6,7 +6,7 @@ cd `dirname $0`
 
 files=(
   etc/nginx/nginx.conf
-  etc/nginx/sites-available/isucon.conf
+  etc/nginx/sites-enabled/isupipe.conf
 )
 
 for file in ${files[@]}
