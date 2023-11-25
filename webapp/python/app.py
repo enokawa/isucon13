@@ -1132,49 +1132,82 @@ def get_user_statistics_handler(username: str) -> tuple[dict[str, Any], int]:
             raise HttpException("not found user that has the given username", NOT_FOUND)
 
         # ランク算出
-        sql = "SELECT * FROM users"
+        # 全ユーザーのリアクション数とチップの合計を計算するSQLクエリ
+
+        # reaction
+        sql = """
+            SELECT
+                u.id as user_id,
+                u.name as user_name,
+                COUNT(*) AS reaction_count
+            FROM
+                users u
+            INNER JOIN livestreams ls ON ls.user_id = u.id
+            INNER JOIN reactions r ON r.livestream_id = ls.id
+            GROUP BY
+                u.id
+        """
+
+        # SQLクエリを実行
         c.execute(sql)
         rows = c.fetchall()
+
+        # 例外処理
         if rows is None:
-            raise HttpException("failed to get users", INTERNAL_SERVER_ERROR)
-        users = [models.UserModel(**row) for row in rows]
+            raise HttpException(
+                "failed to retrieve rankings",
+                INTERNAL_SERVER_ERROR,
+            )
 
+        reactions = {}
+        for row in rows:
+            reactions[row["user_name"]] = int(row["reaction_count"])
+
+        # tip sum
+        sql = """
+            SELECT
+                u.id as user_id,
+                u.name as user_name,
+                IFNULL(SUM(lc.tip), 0) AS tip_sum
+            FROM
+                users u
+            INNER JOIN livestreams ls ON ls.user_id = u.id
+            INNER JOIN livecomments lc ON lc.livestream_id = ls.id
+            GROUP BY
+                u.id
+        """
+
+        # SQLクエリを実行
+        c.execute(sql)
+        rows = c.fetchall()
+
+        # 例外処理
+        if rows is None:
+            raise HttpException(
+                "failed to retrieve rankings",
+                INTERNAL_SERVER_ERROR,
+            )
+
+        tip_sums = {}
+        for row in rows:
+            tip_sums[row["user_name"]] = int(row["tip_sum"])
+
+        # ランキングの生成
         ranking = []
-        for user in users:
-            sql = """
-                SELECT COUNT(*) FROM users u
-                INNER JOIN livestreams l ON l.user_id = u.id
-                INNER JOIN reactions r ON r.livestream_id = l.id
-                WHERE u.id = %s
-                """
-            c.execute(sql, [user.id])
-            row = c.fetchone()
-            if not row:
-                raise HttpException(
-                    "failed to count reactions",
-                    INTERNAL_SERVER_ERROR,
-                )
-            reactions = int(row["COUNT(*)"])
+        for k, reaction in reactions.items():
+            if k in tip_sums:
+                tip_sum = tip_sums[k]
+                score = reaction + tip_sum
+                ranking.append(models.UserRankingEntry(username=k, score=score))
 
-            sql = """
-                SELECT IFNULL(SUM(l2.tip), 0) FROM users u
-                INNER JOIN livestreams l ON l.user_id = u.id
-                INNER JOIN livecomments l2 ON l2.livestream_id = l.id
-                WHERE u.id = %s
-                """
-            c.execute(sql, [user.id])
-            row = c.fetchone()
-            if not row:
-                raise HttpException(
-                    "failed to count tips",
-                    INTERNAL_SERVER_ERROR,
-                )
-            tips = int(row["IFNULL(SUM(l2.tip), 0)"])
-
-            score = reactions + tips
-            ranking.append(models.UserRankingEntry(username=user.name, score=score))
+        # 順番にソート
         ranking = sorted(ranking, key=lambda x: (x.score, x.username))
 
+        user_ranking = next((entry for entry in ranking if entry.username == username), None)
+        if user_ranking is not None:
+            raise HttpException("not found user that has the given username", NOT_FOUND)
+
+        # 特定のユーザーのランキングを見つける
         rank = 1
         i = len(ranking) - 1
         while i >= 0:
@@ -1183,6 +1216,57 @@ def get_user_statistics_handler(username: str) -> tuple[dict[str, Any], int]:
                 break
             rank += 1
             i -= 1
+
+        #sql = "SELECT * FROM users"
+        #c.execute(sql)
+        #rows = c.fetchall()
+        #if rows is None:
+        #    raise HttpException("failed to get users", INTERNAL_SERVER_ERROR)
+        #users = [models.UserModel(**row) for row in rows]
+        #ranking = []
+        #for user in users:
+        #    sql = """
+        #        SELECT COUNT(*) FROM users u
+        #        INNER JOIN livestreams l ON l.user_id = u.id
+        #        INNER JOIN reactions r ON r.livestream_id = l.id
+        #        WHERE u.id = %s
+        #        """
+        #    c.execute(sql, [user.id])
+        #    row = c.fetchone()
+        #    if not row:
+        #        raise HttpException(
+        #            "failed to count reactions",
+        #            INTERNAL_SERVER_ERROR,
+        #        )
+        #    reactions = int(row["COUNT(*)"])
+
+        #    sql = """
+        #        SELECT IFNULL(SUM(l2.tip), 0) FROM users u
+        #        INNER JOIN livestreams l ON l.user_id = u.id
+        #        INNER JOIN livecomments l2 ON l2.livestream_id = l.id
+        #        WHERE u.id = %s
+        #        """
+        #    c.execute(sql, [user.id])
+        #    row = c.fetchone()
+        #    if not row:
+        #        raise HttpException(
+        #            "failed to count tips",
+        #            INTERNAL_SERVER_ERROR,
+        #        )
+        #    tips = int(row["IFNULL(SUM(l2.tip), 0)"])
+
+        #    score = reactions + tips
+        #    ranking.append(models.UserRankingEntry(username=user.name, score=score))
+        #ranking = sorted(ranking, key=lambda x: (x.score, x.username))
+
+        #rank = 1
+        #i = len(ranking) - 1
+        #while i >= 0:
+        #    entry = ranking[i]
+        #    if entry.username == username:
+        #        break
+        #    rank += 1
+        #    i -= 1
 
         # リアクション数
         sql = """
