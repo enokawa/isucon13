@@ -11,6 +11,7 @@ files=(
   webapp/python/app.py
   webapp/python/models.py
   webapp/sql/initdb.d/10_schema.sql
+  webapp/pdns/u.isucon.dev.zone
 )
 
 for server in ${servers[@]}
