@@ -8,7 +8,7 @@ read servers < servers.txt
 
 files=(
   etc/nginx/nginx.conf
-  etc/nginx/sites-available/isucon.conf
+  etc/nginx/sites-enabled/isupipe.conf
 )
 
 for server in ${servers[@]}
@@ -16,7 +16,7 @@ do
   echo "============= ${server} ============="
   for file in ${files[@]}
   do
-    ssh ${server} mkdir -p etc/nginx/sites-available
+    ssh ${server} mkdir -p etc/nginx/sites-enabled
     scp ../${file} ${server}:${file}
 
     ssh ${server} sudo cp ${file} /${file}
