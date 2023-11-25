@@ -7,21 +7,21 @@ cd `dirname $0`
 read servers < servers.txt
 
 files=(
-  webapp/python/main.py
-  webapp/sql/0_Schema.sql
+  webapp/python/app.py
+  webapp/python/models.py
 )
 
 for server in ${servers[@]}
 do
   echo "============= ${server} ============="
   # Stop Go service and enable Python service
-  # ssh ${server} sudo systemctl stop isupipe.go.service
-  # ssh ${server} sudo systemctl disable isupipe.go.service
-  # ssh ${server} sudo systemctl enable isupipe.python.service
+  # ssh ${server} sudo systemctl stop isupipe-go.service
+  # ssh ${server} sudo systemctl disable isupipe-go.service
+  # ssh ${server} sudo systemctl enable isupipe-python.service
 
   # Stop Python service
   # TODO: Fix Systemd Unit name
-  ssh ${server} sudo systemctl stop isupipe.python.service
+  ssh ${server} sudo systemctl stop isupipe-python.service
 
   for file in ${files[@]}
   do
@@ -33,7 +33,7 @@ do
   ssh ${server} sudo rm -f /var/log/nginx/access.log
   
   # Restart services
-  ssh ${server} sudo systemctl start isupipe.python.service
+  ssh ${server} sudo systemctl start isupipe-python.service
   ssh ${server} sudo rm -f /var/log/mysql/mysql-slow.log
   ssh ${server} sudo mysqladmin flush-logs
   ssh ${server} sudo nginx -s reopen
