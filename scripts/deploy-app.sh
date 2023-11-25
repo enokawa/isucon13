@@ -7,6 +7,7 @@ cd `dirname $0`
 read servers < servers.txt
 
 files=(
+  env.sh
   webapp/python/app.py
   webapp/python/models.py
   webapp/sql/initdb.d/10_schema.sql
